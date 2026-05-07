@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<html lang="zh-CN">
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -537,7 +537,9 @@
                 <div v-if="activeTab === 'monitor'" class="flex-1 flex flex-col min-h-0 bg-[#1e1e1e]">
                     <div class="p-4 border-b border-[#333] flex items-center justify-between shrink-0 bg-[#252526]">
                         <div class="flex items-center gap-3">
-                            <el-switch v-model="isListening" inline-prompt active-text="ON" inactive-text="OFF" @change="toggleListening"></el-switch>
+                            <el-tooltip content="请先选择触发事件" :disabled="!!selectedEvent.name" placement="top" effect="light">
+                                <el-switch v-model="isListening" inline-prompt active-text="ON" inactive-text="OFF" @change="toggleListening" :disabled="!selectedEvent.name"></el-switch>
+                            </el-tooltip>
                             <span class="text-sm font-medium" :class="isListening ? 'text-green-400' : 'text-slate-400'">
                                 {{ isListening ? '监听实时事件源中...' : '监听已关闭' }}
                             </span>
