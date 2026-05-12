@@ -277,7 +277,7 @@
                                         <div class="flex-1 space-y-2">
                                             <div v-for="(cond, cIndex) in rule.conditions" :key="cIndex" class="flex items-center gap-2 compact-el">
                                                 <el-select v-model="cond.field" size="small" style="width: 140px" filterable @change="cond.op = ''; cond.value = ''" placeholder="选择字段">
-                                                    <el-option label="-- 从输入数据选择 --" value="" disabled v-if="availableFields.length > 0"></el-option>
+                                                    <el-option label="-- 从事件数据选择 --" value="" disabled v-if="availableFields.length > 0"></el-option>
                                                     <el-option v-for="field in availableFields" :key="field.name" :label="field.name" :value="field.name">
                                                         <span>{{ field.name }}</span>
                                                         <span class="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold" :class="{
@@ -685,7 +685,7 @@
                         <div class="flex-1 space-y-2">
                             <div v-for="(cond, cIndex) in newRule.conditions" :key="cIndex" class="flex items-center gap-2 compact-el">
                                 <el-select v-model="cond.field" size="small" style="width: 140px" filterable @change="cond.op = ''; cond.value = ''" placeholder="选择字段">
-                                    <el-option label="-- 从输入数据选择 --" value="" disabled v-if="availableFields.length > 0"></el-option>
+                                    <el-option label="-- 从事件数据选择 --" value="" disabled v-if="availableFields.length > 0"></el-option>
                                     <el-option v-for="field in availableFields" :key="field.name" :label="field.name" :value="field.name">
                                         <span>{{ field.name }}</span>
                                         <span class="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold" :class="{
