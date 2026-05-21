@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<html lang="zh-CN">
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -440,7 +440,7 @@
                                     <span class="text-sm font-black text-slate-800">自适应引擎</span>
                                     <el-switch v-model="enableAi" size="small" class="ml-3"></el-switch>
                                 </div>
-                                <el-button type="primary" link icon="Connection" size="small" :disabled="!enableAi" @click="agentDialogVisible = true" class="absolute top-3 right-3">绑定智能体</el-button>
+                                <el-button type="primary" link icon="Connection" size="small" :disabled="!enableAi" @click="agentDialogVisible = true" class="absolute top-3 right-3">创建智能体</el-button>
                             </div>
                             
                             <!-- 引擎内容区 -->
@@ -463,9 +463,9 @@
                                     <!-- 优化10: 空状态优化 -->
                                     <div v-if="agents.length === 0" class="text-center py-6">
                                         <el-icon class="text-3xl text-gray-200 mb-2"><Connection /></el-icon>
-                                        <p class="text-xs text-gray-400 mb-2">暂无智能体绑定</p>
+                                        <p class="text-xs text-gray-400 mb-2">暂无智能体</p>
                                         <el-button type="primary" size="small" icon="Plus" @click="agentDialogVisible = true" :disabled="!enableAi">
-                                            绑定智能体
+                                            创建智能体
                                         </el-button>
                                     </div>
                                     <div v-for="agent in agents" :key="agent.id" class="atomic-item !border-l-2 !mb-0 relative" :class="!enableAi || !agent.active ? '!border-l-gray-300' : '!border-l-purple-400'">
@@ -725,30 +725,6 @@
                             </template>
                             <div class="action-dropdown-panel">
                                 <el-tabs v-model="actionTabActive" type="border-card" class="action-tabs">
-                                    <el-tab-pane label="系统集成" name="api">
-                                        <div class="action-list">
-                                            <div v-for="api in apiExecutorList" :key="api.value"
-                                                 class="action-item"
-                                                 :class="{active: newRule.selectedAction === api.value}"
-                                                 @click="selectAction(api)">
-                                                <el-icon class="action-item-icon"><Connection /></el-icon>
-                                                <span class="action-item-label">{{ api.label }}</span>
-                                                <el-tag size="small" type="info" effect="light" round class="action-item-tag">{{ api.method }}</el-tag>
-                                            </div>
-                                        </div>
-                                    </el-tab-pane>
-                                    <el-tab-pane label="设备控制" name="protocol">
-                                        <div class="action-list">
-                                            <div v-for="proto in protocolList" :key="proto.value"
-                                                 class="action-item"
-                                                 :class="{active: newRule.selectedAction === proto.value}"
-                                                 @click="selectAction(proto)">
-                                                <el-icon class="action-item-icon"><Monitor /></el-icon>
-                                                <span class="action-item-label">{{ proto.label }}</span>
-                                                <el-tag size="small" type="warning" effect="light" round class="action-item-tag">{{ proto.protocol }}</el-tag>
-                                            </div>
-                                        </div>
-                                    </el-tab-pane>
                                     <el-tab-pane label="工作流" name="workflow">
                                         <div class="action-list">
                                             <div v-for="wf in workflowList" :key="wf.value"
@@ -773,6 +749,30 @@
                                             </div>
                                         </div>
                                     </el-tab-pane>
+                                    <el-tab-pane label="系统集成" name="api">
+                                        <div class="action-list">
+                                            <div v-for="api in apiExecutorList" :key="api.value"
+                                                 class="action-item"
+                                                 :class="{active: newRule.selectedAction === api.value}"
+                                                 @click="selectAction(api)">
+                                                <el-icon class="action-item-icon"><Connection /></el-icon>
+                                                <span class="action-item-label">{{ api.label }}</span>
+                                                <el-tag size="small" type="info" effect="light" round class="action-item-tag">{{ api.method }}</el-tag>
+                                            </div>
+                                        </div>
+                                    </el-tab-pane>
+                                    <el-tab-pane label="设备控制" name="protocol">
+                                        <div class="action-list">
+                                            <div v-for="proto in protocolList" :key="proto.value"
+                                                 class="action-item"
+                                                 :class="{active: newRule.selectedAction === proto.value}"
+                                                 @click="selectAction(proto)">
+                                                <el-icon class="action-item-icon"><Monitor /></el-icon>
+                                                <span class="action-item-label">{{ proto.label }}</span>
+                                                <el-tag size="small" type="warning" effect="light" round class="action-item-tag">{{ proto.protocol }}</el-tag>
+                                            </div>
+                                        </div>
+                                    </el-tab-pane>
                                 </el-tabs>
                             </div>
                         </el-popover>
@@ -780,6 +780,91 @@
                     
                     <!-- 参数映射区域 -->
                     <div v-if="newRule.selectedAction" class="param-mapping-area mt-4">
+                        <!-- 通知类配置 -->
+                        <template v-if="currentActionType === 'notification'">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="p-1.5 bg-red-100 text-red-600 rounded">
+                                        <el-icon><Bell /></el-icon>
+                                    </div>
+                                    <h3 class="font-semibold text-sm text-slate-800">{{ getNotificationPlatformName() }}机器人配置</h3>
+                                </div>
+                                <span class="text-[11px] text-slate-400 bg-slate-50 px-2 py-1 rounded">配置Webhook地址和通知内容</span>
+                            </div>
+                            <div class="space-y-4">
+                                <!-- Webhook地址 -->
+                                <div>
+                                    <label class="block text-[12px] font-medium text-slate-600 mb-1.5">
+                                        <span class="text-red-500">*</span> Webhook地址
+                                    </label>
+                                    <el-input v-model="notificationConfig.webhook" placeholder="请输入机器人Webhook地址" size="small">
+                                        <template #prefix>
+                                            <el-icon class="text-slate-400"><Link /></el-icon>
+                                        </template>
+                                    </el-input>
+                                    <p v-if="currentNotificationType === 'dingtalk'" class="text-[10px] text-slate-400 mt-1">格式：https://oapi.dingtalk.com/robot/send?access_token=xxx</p>
+                                    <p v-if="currentNotificationType === 'feishu'" class="text-[10px] text-slate-400 mt-1">格式：https://open.feishu.cn/open-apis/bot/v2/hook/xxx</p>
+                                    <p v-if="currentNotificationType === 'wecom'" class="text-[10px] text-slate-400 mt-1">格式：https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx</p>
+                                </div>
+
+                                <!-- 加签密钥（钉钉/飞书需要，企业微信不需要） -->
+                                <div v-if="currentNotificationType !== 'wecom'">
+                                    <label class="block text-[12px] font-medium text-slate-600 mb-1.5">
+                                        加签密钥 <span class="text-slate-400 font-normal">（可选）</span>
+                                    </label>
+                                    <el-input v-model="notificationConfig.secret" placeholder="请输入加签密钥，如未开启签名校验可留空" size="small" show-password>
+                                        <template #prefix>
+                                            <el-icon class="text-slate-400"><Key /></el-icon>
+                                        </template>
+                                    </el-input>
+                                    <p class="text-[10px] text-slate-400 mt-1">
+                                        {{ currentNotificationType === 'dingtalk' ? '钉钉机器人安全设置中选择"加签"后获得，格式：SECxxx' : '飞书机器人安全设置中开启签名校验后获得' }}
+                                    </p>
+                                </div>
+
+                                <!-- 通知内容 -->
+                                <div class="relative">
+                                    <label class="block text-[12px] font-medium text-slate-600 mb-1.5">
+                                        <span class="text-red-500">*</span> 通知内容
+                                    </label>
+                                    <div class="relative">
+                                        <textarea
+                                            ref="notificationContentRef"
+                                            v-model="notificationConfig.content"
+                                            class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none transition-colors"
+                                            :rows="4"
+                                            :placeholder="'请输入通知内容，输入 {{ 可选择事件字段作为变量'"
+                                            @input="handleNotificationContentInput"
+                                            @keydown="handleNotificationContentKeydown"
+                                            @blur="handleNotificationContentBlur"
+                                        ></textarea>
+                                        
+                                        <!-- 变量选择浮窗 -->
+                                        <div v-show="showVariablePopup" class="absolute z-50 left-0 right-0 bottom-full mb-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                                            <div class="px-3 py-2 bg-slate-50 border-b border-slate-200">
+                                                <span class="text-[11px] font-medium text-slate-600">选择事件字段</span>
+                                            </div>
+                                            <div class="max-h-[200px] overflow-y-auto">
+                                                <div
+                                                    v-for="(field, index) in filteredVariableFields"
+                                                    :key="field"
+                                                    class="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 flex items-center justify-between"
+                                                    :class="{ 'bg-blue-50': variablePopupIndex === index }"
+                                                    @click="insertVariable(field)"
+                                                >
+                                                    <span class="font-mono text-slate-700">{{ field }}</span>
+                                                    <el-tag size="small" type="info" effect="light" class="!text-[10px]">事件字段</el-tag>
+                                                </div>
+                                                <div v-if="filteredVariableFields.length === 0" class="px-3 py-4 text-sm text-slate-400 text-center">
+                                                    无匹配的字段
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
                         <template v-if="currentActionType === 'workflow'">
                             <div class="flex items-center justify-between mb-3">
                                 <div class="flex items-center gap-2">
@@ -835,8 +920,8 @@
                             </div>
                         </template>
                         
-                        <!-- 其他类型的待配置占位 -->
-                        <template v-else>
+                        <!-- 其他类型的待配置占位（通知类型除外） -->
+                        <template v-if="currentActionType !== 'workflow' && currentActionType !== 'notification'">
                             <div class="flex flex-col items-center justify-center py-8 px-6 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
                                 <el-icon class="text-3xl text-slate-300 mb-3"><Setting /></el-icon>
                                 <p class="text-sm text-slate-500 font-medium mb-1">待配置模块</p>
@@ -1026,7 +1111,7 @@
     </div>
 
     <script>
-        const { createApp, ref, computed, nextTick } = Vue;
+        const { createApp, ref, computed, nextTick, h } = Vue;
         const app = createApp({
             setup() {
                 const isEventModalOpen = ref(false);
@@ -1305,6 +1390,15 @@
                     } else {
                         workflowParams.value = [];
                     }
+                    if (rule.selectedAction && rule.notificationConfig) {
+                        notificationConfig.value = JSON.parse(JSON.stringify(rule.notificationConfig));
+                    } else {
+                        notificationConfig.value = {
+                            webhook: '',
+                            secret: '',
+                            content: ''
+                        };
+                    }
                     ruleDialogVisible.value = true;
                 };
 
@@ -1318,7 +1412,8 @@
                     const ruleData = {
                         selectedAction: newRule.value.selectedAction,
                         actLabel: selectedActionInfo ? selectedActionInfo.label : '',
-                        workflowParams: currentActionType.value === 'workflow' ? JSON.parse(JSON.stringify(workflowParams.value)) : []
+                        workflowParams: currentActionType.value === 'workflow' ? JSON.parse(JSON.stringify(workflowParams.value)) : [],
+                        notificationConfig: currentActionType.value === 'notification' ? JSON.parse(JSON.stringify(notificationConfig.value)) : null
                     };
                     if (isEditMode.value) {
                         const idx = rules.value.findIndex(r => r.id === newRule.value.id);
@@ -1353,7 +1448,7 @@
                 };
 
                 const actionPopoverRef = ref(null);
-                const actionTabActive = ref('api');
+                const actionTabActive = ref('workflow');
                 
                 const apiExecutorList = [
                     { label: '调用外部RESTful接口 - 设备控制API', value: 'api_device_control', method: 'POST' },
@@ -1378,9 +1473,8 @@
                 
                 const notificationList = [
                     { label: '钉钉群机器人通知', value: 'notif_dingtalk', channel: '钉钉' },
-                    { label: '短信通知 - 运维人员', value: 'notif_sms_operator', channel: '短信' },
-                    { label: '邮件通知 - 告警汇总', value: 'notif_email_alert', channel: '邮件' },
-                    { label: '企业微信通知', value: 'notif_wecom', channel: '企业微信' },
+                    { label: '飞书群机器人通知', value: 'notif_feishu', channel: '飞书' },
+                    { label: '企业微信群机器人通知', value: 'notif_wecom', channel: '企业微信' },
                 ];
                 
                 const allActionTypes = computed(() => {
@@ -1399,6 +1493,16 @@
                 });
                 
                 const workflowParams = ref([]);
+                const notificationContentRef = ref(null);
+                const showVariablePopup = ref(false);
+                const variablePopupIndex = ref(0);
+                const variableSearchText = ref('');
+
+                const notificationConfig = ref({
+                    webhook: '',
+                    secret: '',
+                    content: ''
+                });
 
                 const workflowParamTemplates = {
                     wf_device_maintenance: [
@@ -1433,11 +1537,109 @@
                     }
                 };
                 
+                const currentNotificationType = computed(() => {
+                    if (!newRule.value.selectedAction) return '';
+                    if (newRule.value.selectedAction === 'notif_dingtalk') return 'dingtalk';
+                    if (newRule.value.selectedAction === 'notif_feishu') return 'feishu';
+                    if (newRule.value.selectedAction === 'notif_wecom') return 'wecom';
+                    return '';
+                });
+
+                const getNotificationPlatformName = () => {
+                    const type = currentNotificationType.value;
+                    if (type === 'dingtalk') return '钉钉';
+                    if (type === 'feishu') return '飞书';
+                    if (type === 'wecom') return '企业微信';
+                    return '';
+                };
+
+                const filteredVariableFields = computed(() => {
+                    if (!variableSearchText.value) return availableFields.value;
+                    return availableFields.value.filter(f => 
+                        f.toLowerCase().includes(variableSearchText.value.toLowerCase())
+                    );
+                });
+
+                const handleNotificationContentInput = (e) => {
+                    const textarea = e.target;
+                    const cursorPos = textarea.selectionStart;
+                    const textBeforeCursor = notificationConfig.value.content.substring(0, cursorPos);
+                    
+                    const lastBraceIndex = textBeforeCursor.lastIndexOf('{{');
+                    if (lastBraceIndex !== -1 && lastBraceIndex === cursorPos - 2) {
+                        showVariablePopup.value = true;
+                        variablePopupIndex.value = 0;
+                        variableSearchText.value = '';
+                    } else if (showVariablePopup.value && lastBraceIndex !== -1) {
+                        variableSearchText.value = textBeforeCursor.substring(lastBraceIndex + 2);
+                    } else {
+                        showVariablePopup.value = false;
+                    }
+                };
+
+                const handleNotificationContentKeydown = (e) => {
+                    if (!showVariablePopup.value) return;
+                    
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        variablePopupIndex.value = Math.min(variablePopupIndex.value + 1, filteredVariableFields.value.length - 1);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        variablePopupIndex.value = Math.max(variablePopupIndex.value - 1, 0);
+                    } else if (e.key === 'Enter' || e.key === 'Tab') {
+                        e.preventDefault();
+                        if (filteredVariableFields.value.length > 0) {
+                            insertVariable(filteredVariableFields.value[variablePopupIndex.value]);
+                        }
+                    } else if (e.key === 'Escape') {
+                        showVariablePopup.value = false;
+                    }
+                };
+
+                const handleNotificationContentBlur = () => {
+                    setTimeout(() => {
+                        showVariablePopup.value = false;
+                    }, 200);
+                };
+
+                const insertVariable = (fieldName) => {
+                    const textarea = notificationContentRef.value;
+                    if (!textarea) return;
+                    
+                    const cursorPos = textarea.selectionStart;
+                    const textBeforeCursor = notificationConfig.value.content.substring(0, cursorPos);
+                    const lastBraceIndex = textBeforeCursor.lastIndexOf('{{');
+                    
+                    if (lastBraceIndex !== -1) {
+                        const newContent = 
+                            notificationConfig.value.content.substring(0, lastBraceIndex) + 
+                            '{{' + fieldName + '}}' +
+                            notificationConfig.value.content.substring(cursorPos);
+                        
+                        notificationConfig.value.content = newContent;
+                    }
+                    
+                    showVariablePopup.value = false;
+                    variableSearchText.value = '';
+                    
+                    nextTick(() => {
+                        const newCursorPos = lastBraceIndex + fieldName.length + 4;
+                        textarea.focus();
+                        textarea.setSelectionRange(newCursorPos, newCursorPos);
+                    });
+                };
+
                 const selectAction = (action) => {
                     newRule.value.selectedAction = action.value;
                     const actionInfo = allActionTypes.value.find(a => a.value === action.value);
                     if (actionInfo && actionInfo.type === 'workflow') {
                         loadWorkflowParams(action.value);
+                    } else if (actionInfo && actionInfo.type === 'notification') {
+                        notificationConfig.value = {
+                            webhook: '',
+                            secret: '',
+                            content: ''
+                        };
                     } else {
                         workflowParams.value = [];
                     }
@@ -1842,7 +2044,10 @@
                     availableFields, getFieldOperators, needsValueInput, getFieldType,
                     ruleDialogVisible, agentDialogVisible, isEditMode,
                     newRule, actionTabActive, apiExecutorList, protocolList, workflowList, notificationList, allActionTypes, selectedActionLabel, selectAction, actionPopoverRef,
-                    workflowParams, currentActionType,
+                    workflowParams, currentActionType, notificationConfig, notificationContentRef, showVariablePopup, variablePopupIndex, variableSearchText,
+                    filteredVariableFields, currentNotificationType, getNotificationPlatformName,
+                    handleNotificationContentInput, handleNotificationContentKeydown, handleNotificationContentBlur,
+                    insertVariable,
                     addNewRuleCondition, removeNewRuleCondition, editRule, confirmRuleConfig,
                     libraryAgents, selectedAgents, handleAgentSelection, confirmBindAgent,
                     activeTab, isRunning, mockJson, mockLogs, isListening, realtimeLogs,
