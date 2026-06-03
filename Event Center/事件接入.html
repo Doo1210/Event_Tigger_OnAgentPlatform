@@ -180,6 +180,17 @@
             font-size: 13px;
             padding: 8px 16px;
         }
+        .webhook-auth-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .webhook-auth-tag.none { background: #f1f5f9; color: #64748b; }
+        .webhook-auth-tag.hmac { background: #fef3c7; color: #b45309; }
+        .webhook-auth-tag.bearer { background: #ede9fe; color: #6d28d9; }
     </style>
 </head>
 <body class="h-screen overflow-hidden">
@@ -239,10 +250,7 @@
                     </el-table-column>
                     <el-table-column label="配置信息" min-width="240">
                         <template #default="scope">
-                            <div v-if="scope.row.type === 'WebHook'" style="display:flex;flex-direction:column;gap:4px;font-size:12px;">
-                                <span style="color:#64748b;font-family:monospace;">路径：{{ scope.row.config.path }}</span>
-                                <span style="color:#64748b;font-family:monospace;">方法：{{ scope.row.config.method }}</span>
-                            </div>
+                            <span v-if="scope.row.type === 'WebHook'" style="font-size:12px;color:#64748b;word-break:break-all;">URL: <span style="color:#1e293b;font-family:monospace;font-size:11.5px;">{{ getWebhookFullUrl(scope.row.config.path) }}</span></span>
                             <div v-else-if="scope.row.type !== 'Timer'" style="display:flex;flex-direction:column;gap:4px;font-size:12px;">
                                 <span style="color:#64748b;" v-if="scope.row.config.ip">IP：{{ scope.row.config.ip }}</span>
                                 <span style="color:#64748b;" v-if="scope.row.config.bootstrapServers">Broker：{{ scope.row.config.bootstrapServers }}</span>
@@ -315,7 +323,7 @@
         <!-- ========= 新增/编辑 Drawer ========= -->
         <div v-if="isDrawerOpen" class="fixed inset-0 z-50 overflow-hidden flex justify-end">
             <div class="drawer-mask absolute inset-0 transition-opacity" @click="isDrawerOpen = false"></div>
-            <div class="drawer-content relative w-[560px] bg-white shadow-2xl flex flex-col h-full border-l border-slate-200 transition-transform duration-300 transform" :class="isDrawerOpen ? 'translate-x-0' : 'translate-x-full'">
+            <div class="drawer-content relative w-[600px] bg-white shadow-2xl flex flex-col h-full border-l border-slate-200 transition-transform duration-300 transform" :class="isDrawerOpen ? 'translate-x-0' : 'translate-x-full'">
                 <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
                     <h2 class="text-base font-bold text-slate-800">{{ isEditMode ? '编辑事件' : '新增事件' }}</h2>
                     <button @click="isDrawerOpen = false" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all">
@@ -574,109 +582,177 @@
 
                     <!-- WebHook 配置 -->
                     <div v-if="form.sourceType === 'WebHook'" class="space-y-6">
-                        <h3 class="text-[15px] font-bold text-slate-800">基础配置</h3>
-                        <div>
-                            <label class="block text-sm text-slate-700 mb-2"><span class="text-red-500">*</span> WebHook 路径</label>
-                            <input type="text" v-model="form.webhookPath" placeholder="例如: https://trigger.ai-plugin.io/triggers/webhook/Skmh7TNDIq2y1Pivn-FNE1Ae" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 placeholder:text-xs">
+                        <h3 class="text-[15px] font-bold text-slate-800">Webhook 信息</h3>
+                        <div v-if="form.webhookPath">
+                            <label class="block text-sm text-slate-700 mb-2">Webhook URL</label>
+                            <div class="flex gap-2 items-stretch">
+                                <div class="relative w-[110px] shrink-0">
+                                    <select v-model="form.webhookMethod" title="请求方式" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
+                                        <option value="GET">GET</option>
+                                        <option value="POST">POST</option>
+                                        <option value="PUT">PUT</option>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
+                                </div>
+                                <input type="text" readonly :value="getWebhookFullUrl(form.webhookPath)" title="回调地址" class="flex-1 min-w-0 bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm font-mono text-slate-700 outline-none cursor-not-allowed">
+                                <button type="button" @click="copyWebhookUrl(form.webhookPath)" class="shrink-0 px-3 py-2 text-xs font-medium text-blue-600 border border-slate-200 rounded-md hover:bg-blue-50 transition-colors bg-white">复制</button>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">外部系统使用所选请求方式调用此 URL，即可触发本事件。</p>
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2">请求方法</label>
-                            <div class="relative">
-                                <select v-model="form.webhookMethod" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
-                                    <option value="POST">POST</option>
-                                    <option value="PUT">PUT</option>
-                                    <option value="GET">GET</option>
-                                </select>
-                                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
+                            <label class="block text-sm text-slate-700 mb-2">安全设置</label>
+                            <div class="space-y-2">
+                                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="checkbox" :checked="form.webhookAuthType === 'hmac'" @change="toggleWebhookSignature($event.target.checked)" class="rounded border-slate-300">
+                                    <span class="text-sm text-slate-700">签名校验</span>
+                                </label>
+                                <p class="text-[11px] text-slate-400" v-if="form.webhookAuthType === 'none'">适用于内网或测试环境，生产环境建议开启签名校验。</p>
+                                <template v-if="form.webhookAuthType === 'hmac'">
+                                    <div class="flex gap-2 items-center">
+                                        <input type="text" readonly :value="form.webhookSecret" class="flex-1 bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm font-mono outline-none cursor-not-allowed">
+                                        <button type="button" @click="copyText(form.webhookSecret)" class="shrink-0 px-3 py-2 text-xs font-medium text-blue-600 border border-slate-200 rounded-md hover:bg-blue-50 transition-colors bg-white">复制</button>
+                                        <button type="button" @click="resetWebhookSecret()" class="shrink-0 px-3 py-2 text-xs font-medium text-slate-600 border border-slate-200 rounded-md hover:bg-slate-50 transition-colors bg-white">重置</button>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400">开启签名校验后自动生成密钥，外部请求需在 Header 中携带签名，平台使用此密钥验签。</p>
+                                </template>
                             </div>
                         </div>
+
+                        <div class="h-px bg-slate-100 my-4"></div>
+                        <h3 class="text-[15px] font-bold text-slate-800">入参配置</h3>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2">内容类型</label>
+                            <label class="block text-sm text-slate-700 mb-2">内容类型 (Content-Type)</label>
                             <div class="relative">
                                 <select v-model="form.webhookContentType" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
                                     <option value="application/json">application/json</option>
                                     <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
                                     <option value="text/plain">text/plain</option>
+                                    <option value="application/octet-stream">application/octet-stream</option>
+                                    <option value="multipart/form-data">multipart/form-data</option>
                                 </select>
                                 <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
                             </div>
+                            <p class="text-[11px] text-slate-400 mt-1">声明请求 Body 的数据格式；GET 通常无 Body，以 Query 参数为主。</p>
                         </div>
-                        <div class="h-px bg-slate-100 my-4"></div>
-                        <h3 class="text-[15px] font-bold text-slate-800">安全与鉴权</h3>
+
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2">签名验证方式</label>
-                            <div class="relative">
-                                <select v-model="form.webhookAuthType" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
-                                    <option value="none">无验证</option>
-                                    <option value="hmac">HMAC 签名</option>
-                                </select>
-                                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
-                            </div>
-                        </div>
-                        <div v-if="form.webhookAuthType === 'hmac'" class="space-y-4">
-                            <div>
-                                <label class="block text-sm text-slate-700 mb-2">签名算法</label>
-                                <div class="relative">
-                                    <select v-model="form.webhookHmacAlgorithm" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
-                                        <option value="sha256">SHA256</option>
-                                        <option value="sha1">SHA1</option>
-                                        <option value="md5">MD5</option>
-                                        <option value="sha512">SHA512</option>
-                                    </select>
-                                    <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
+                            <p class="text-[11px] text-slate-400 mb-4">声明外部请求中的业务参数，供平台解析引用。鉴权相关 Header（Authorization、签名等）由上方安全设置自动处理，无需在此重复声明。</p>
+
+                            <!-- Query Parameters -->
+                            <div class="mb-5">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-sm font-bold text-slate-800">Query Parameters</h3>
+                                    <button type="button" @click="addQueryParam()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加</button>
+                                </div>
+                                <div class="border border-slate-200 rounded-md overflow-hidden">
+                                    <table class="w-full text-left text-[13px]">
+                                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
+                                            <tr>
+                                                <th class="px-3 py-2 font-medium w-[38%]">变量名</th>
+                                                <th class="px-3 py-2 font-medium w-[32%]">类型</th>
+                                                <th class="px-3 py-2 font-medium w-[14%] text-center">必填</th>
+                                                <th class="px-3 py-2 font-medium w-[16%] text-center">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            <tr v-for="(param, idx) in form.queryParams" :key="'q'+idx" class="bg-white">
+                                                <td class="px-3 py-1.5"><input type="text" v-model="param.name" placeholder="例如: source" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-2 py-1 outline-none text-[13px]"></td>
+                                                <td class="px-3 py-1.5">
+                                                    <select v-model="param.type" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-1 py-1 outline-none text-[13px] bg-transparent cursor-pointer">
+                                                        <option value="string">String</option>
+                                                        <option value="number">Number</option>
+                                                        <option value="boolean">Boolean</option>
+                                                    </select>
+                                                </td>
+                                                <td class="px-3 py-1.5 text-center"><input type="checkbox" v-model="param.required" class="rounded border-slate-300"></td>
+                                                <td class="px-3 py-1.5 text-center">
+                                                    <button type="button" @click="removeQueryParam(idx)" class="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all" title="删除">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="form.queryParams.length === 0">
+                                                <td colspan="4" class="px-3 py-4 text-center text-slate-400 text-xs italic">暂无 Query 参数，点击添加</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-sm text-slate-700 mb-2">密钥 (Secret Key)</label>
-                                <div class="relative">
-                                    <input :type="showHmacSecret ? 'text' : 'password'" v-model="form.webhookSecret" placeholder="输入HMAC密钥" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 pr-10">
-                                    <button type="button" @click="showHmacSecret = !showHmacSecret" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                                        <i data-lucide="eye" v-if="!showHmacSecret" class="w-4 h-4"></i>
-                                        <i data-lucide="eye-off" v-else class="w-4 h-4"></i>
-                                    </button>
+
+                            <!-- Header Parameters -->
+                            <div class="mb-5">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-sm font-bold text-slate-800">Header Parameters</h3>
+                                    <button type="button" @click="addHeaderParam()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加</button>
                                 </div>
-                                <p class="text-[11px] text-slate-400 mt-1">请求将使用此密钥对请求体进行签名验证</p>
+                                <div class="border border-slate-200 rounded-md overflow-hidden">
+                                    <table class="w-full text-left text-[13px]">
+                                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
+                                            <tr>
+                                                <th class="px-3 py-2 font-medium w-[60%]">变量名</th>
+                                                <th class="px-3 py-2 font-medium w-[20%] text-center">必填</th>
+                                                <th class="px-3 py-2 font-medium w-[20%] text-center">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            <tr v-for="(param, idx) in form.headerParams" :key="'h'+idx" class="bg-white">
+                                                <td class="px-3 py-1.5"><input type="text" v-model="param.name" placeholder="例如: X-GitHub-Event" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-2 py-1 outline-none text-[13px]"></td>
+                                                <td class="px-3 py-1.5 text-center"><input type="checkbox" v-model="param.required" class="rounded border-slate-300"></td>
+                                                <td class="px-3 py-1.5 text-center">
+                                                    <button type="button" @click="removeHeaderParam(idx)" class="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all" title="删除">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="form.headerParams.length === 0">
+                                                <td colspan="3" class="px-3 py-4 text-center text-slate-400 text-xs italic">暂无 Header 参数，点击添加</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                        <div class="h-px bg-slate-100 my-4"></div>
-                        <!-- 字段配置 -->
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-sm font-bold text-slate-800">事件数据字段配置</h3>
-                                <button @click="addField()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加字段</button>
+
+                            <!-- Request Body Parameters -->
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-sm font-bold text-slate-800">Request Body Parameters</h3>
+                                    <button type="button" @click="addBodyParam()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加</button>
+                                </div>
+                                <div class="border border-slate-200 rounded-md overflow-hidden">
+                                    <table class="w-full text-left text-[13px]">
+                                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
+                                            <tr>
+                                                <th class="px-3 py-2 font-medium w-[38%]">变量名</th>
+                                                <th class="px-3 py-2 font-medium w-[32%]">类型</th>
+                                                <th class="px-3 py-2 font-medium w-[14%] text-center">必填</th>
+                                                <th class="px-3 py-2 font-medium w-[16%] text-center">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            <tr v-for="(param, idx) in form.bodyParams" :key="'b'+idx" class="bg-white">
+                                                <td class="px-3 py-1.5"><input type="text" v-model="param.name" placeholder="例如: order_id" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-2 py-1 outline-none text-[13px]"></td>
+                                                <td class="px-3 py-1.5">
+                                                    <select v-model="param.type" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-1 py-1 outline-none text-[13px] bg-transparent cursor-pointer">
+                                                        <option value="string">String</option>
+                                                        <option value="number">Number</option>
+                                                        <option value="boolean">Boolean</option>
+                                                    </select>
+                                                </td>
+                                                <td class="px-3 py-1.5 text-center"><input type="checkbox" v-model="param.required" class="rounded border-slate-300"></td>
+                                                <td class="px-3 py-1.5 text-center">
+                                                    <button type="button" @click="removeBodyParam(idx)" class="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all" title="删除">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="form.bodyParams.length === 0">
+                                                <td colspan="4" class="px-3 py-4 text-center text-slate-400 text-xs italic">暂无 Body 参数，点击添加</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                            <div class="border border-slate-200 rounded-md overflow-hidden">
-                                <table class="w-full text-left text-[13px]">
-                                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
-                                        <tr>
-                                            <th class="px-3 py-2 font-medium w-[45%]">字段名 (Key)</th>
-                                            <th class="px-3 py-2 font-medium w-[40%]">数据类型</th>
-                                            <th class="px-3 py-2 font-medium w-[15%] text-center">操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        <tr v-for="(field, idx) in form.pulsarFields" :key="idx" class="bg-white">
-                                            <td class="px-3 py-1.5"><input type="text" v-model="field.name" placeholder="例如: event_id" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-2 py-1 outline-none text-[13px]"></td>
-                                            <td class="px-3 py-1.5">
-                                                <select v-model="field.type" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-1 py-1 outline-none text-[13px] bg-transparent cursor-pointer">
-                                                    <option>String (文本)</option>
-                                                    <option>Number (数值)</option>
-                                                    <option>Boolean (布尔)</option>
-                                                </select>
-                                            </td>
-                                            <td class="px-3 py-1.5 text-center">
-                                                <button @click="removeField(idx)" class="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all" title="删除字段">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr v-if="form.pulsarFields.length === 0">
-                                            <td colspan="3" class="px-3 py-4 text-center text-slate-400 text-xs italic">暂未配置任何解析字段</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <p class="text-[11px] text-slate-400 mt-2">提示：配置字段后，下游工作流才能正确解析并引用事件内容。</p>
+                            <p class="text-[11px] text-slate-400 mt-2">原始请求仍会完整保留为 <code class="text-xs bg-slate-100 px-1 rounded">payload._webhook_raw</code>，供下游兜底引用。</p>
                         </div>
                     </div>
                 </div>
@@ -738,6 +814,8 @@
     <script>
         const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
 
+        const WEBHOOK_BASE_URL = 'https://api.event-platform.local';
+
         const app = createApp({
             setup() {
                 const isDrawerOpen = ref(false);
@@ -751,7 +829,6 @@
                 const filterSourceType = ref('');
                 const filterStatus = ref('');
                 const filterAgent = ref('');
-                const showHmacSecret = ref(false);
                 const showPulsarToken = ref(false);
                 const showKafkaPassword = ref(false);
                 const editingRuleId = ref(null);
@@ -772,6 +849,9 @@
                     pulsarUsername: '',
                     pulsarPassword: '',
                     pulsarFields: [],
+                    queryParams: [],
+                    headerParams: [],
+                    bodyParams: [],
                     kafkaBootstrapServers: '',
                     kafkaTopic: '',
                     kafkaGroupId: '',
@@ -790,8 +870,8 @@
                     { id: 2, name: '每周五能耗巡检报表', type: 'Timer', status: true, triggerCount: 86, showMore: false, config: { cronDesc: '每周五 22:00:00' }, rules: [], agents: ['能耗巡检任务'] },
                     { id: 3, name: '每日早班开机状态确认', type: 'Timer', status: true, triggerCount: 342, showMore: false, config: { cronDesc: '每日 08:30:00' }, rules: ['设备状态检查'], agents: ['设备开机状态检查任务'] },
                     { id: 4, name: 'SMT贴片机停机信号订阅', type: 'Pulsar', status: false, triggerCount: 12, showMore: false, config: { ip: 'pulsar.factory.local:6650', topic: 'industrial/smt/stop_code' }, rules: [], agents: [] },
-                    { id: 5, name: 'GitHub 代码提交通知', type: 'WebHook', status: true, triggerCount: 56, showMore: false, config: { path: '/webhook/github/commit', method: 'POST', authType: 'hmac', contentType: 'application/json' }, rules: ['代码审核'], agents: ['代码提交处理任务'] },
-                    { id: 6, name: '订单状态更新 WebHook', type: 'WebHook', status: true, triggerCount: 234, showMore: false, config: { path: '/webhook/orders/update', method: 'POST', authType: 'token', contentType: 'application/json' }, rules: ['订单处理'], agents: ['订单状态处理任务'] },
+                    { id: 5, name: 'GitHub 代码提交通知', type: 'WebHook', status: true, triggerCount: 56, showMore: false, config: { path: '/webhook/github/commit', method: 'POST', authType: 'hmac', contentType: 'application/json', hmacAlgorithm: 'sha256', secret: 'whsec_mock_github', queryParams: [], headerParams: [{ name: 'X-GitHub-Event', required: true }], bodyParams: [{ name: 'commit_id', type: 'string', required: true }, { name: 'author', type: 'string', required: false }, { name: 'message', type: 'string', required: false }] }, rules: ['代码审核'], agents: ['代码提交处理任务'] },
+                    { id: 6, name: '订单状态更新 WebHook', type: 'WebHook', status: true, triggerCount: 234, showMore: false, config: { path: '/webhook/orders/update', method: 'POST', authType: 'none', contentType: 'application/json', queryParams: [{ name: 'notify_type', type: 'string', required: false }], headerParams: [], bodyParams: [{ name: 'order_id', type: 'string', required: true }, { name: 'status', type: 'string', required: true }, { name: 'amount', type: 'number', required: false }] }, rules: ['订单处理'], agents: ['订单状态处理任务'] },
                     { id: 7, name: '设备传感器数据流', type: 'Kafka', status: true, triggerCount: 1523, showMore: false, config: { bootstrapServers: 'kafka-broker-1:9092,kafka-broker-2:9092', topic: 'iot.sensor.data' }, rules: ['数据清洗', '异常检测'], agents: ['传感器数据处理任务'] }
                 ]);
                 const eventLogsData = {
@@ -826,6 +906,120 @@
 
                 watch([searchKeyword, filterSourceType, filterStatus, filterAgent], () => { currentPage.value = 1; });
 
+                const generateRandomToken = (prefix) => {
+                    const rand = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+                    return `${prefix}_${rand}`;
+                };
+                const generateWebhookPath = (id) => `/webhook/evt_${id}_${Math.random().toString(36).slice(2, 8)}`;
+                const getNextEventId = () => ruleList.value.length > 0 ? Math.max(...ruleList.value.map(r => r.id)) + 1 : 1;
+                const ensureWebhookPath = () => {
+                    if (!form.value.webhookPath) {
+                        const id = isEditMode.value && editingRuleId.value ? editingRuleId.value : getNextEventId();
+                        form.value.webhookPath = generateWebhookPath(id);
+                    }
+                };
+                const getWebhookFullUrl = (path) => path ? `${WEBHOOK_BASE_URL}${path}` : '';
+                const getAuthTypeLabel = (authType) => {
+                    if (authType === 'hmac') return '签名校验';
+                    return '无鉴权';
+                };
+                const copyText = async (text) => {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        ElementPlus.ElMessage.success('已复制到剪贴板');
+                    } catch {
+                        ElementPlus.ElMessage.error('复制失败，请手动复制');
+                    }
+                };
+                const copyWebhookUrl = (path) => copyText(getWebhookFullUrl(path));
+                const generateWebhookSecret = () => {
+                    form.value.webhookSecret = generateRandomToken('whsec');
+                };
+                const resetWebhookSecret = () => {
+                    generateWebhookSecret();
+                    ElementPlus.ElMessage.success('密钥已重置');
+                };
+                const handleWebhookAuthChange = () => {
+                    if (form.value.webhookAuthType === 'hmac') {
+                        if (!form.value.webhookSecret) generateWebhookSecret();
+                    } else {
+                        form.value.webhookSecret = '';
+                    }
+                };
+                const toggleWebhookSignature = (enabled) => {
+                    form.value.webhookAuthType = enabled ? 'hmac' : 'none';
+                    handleWebhookAuthChange();
+                };
+                const normalizeQueryParams = (list) => list
+                    .filter(p => p.name.trim())
+                    .map(p => ({ name: p.name.trim(), type: p.type || 'string', required: !!p.required }));
+                const normalizeHeaderParams = (list) => list
+                    .filter(p => p.name.trim())
+                    .map(p => ({ name: p.name.trim(), required: !!p.required }));
+                const normalizeBodyParams = (list) => list
+                    .filter(p => p.name.trim())
+                    .map(p => ({ name: p.name.trim(), type: p.type || 'string', required: !!p.required }));
+                const validateParamList = (list, sectionLabel) => {
+                    if (list.some(p => !p.name.trim())) {
+                        ElementPlus.ElMessage.warning(`${sectionLabel}：请填写所有变量名，或删除空行`);
+                        return false;
+                    }
+                    const names = list.map(p => p.name.trim()).filter(Boolean);
+                    if (names.length !== new Set(names).size) {
+                        ElementPlus.ElMessage.warning(`${sectionLabel}：变量名不能重复`);
+                        return false;
+                    }
+                    return true;
+                };
+                const fillWebhookFormFromConfig = (config) => {
+                    form.value.webhookPath = config.path || '';
+                    form.value.webhookMethod = ['GET', 'POST', 'PUT'].includes(config.method) ? config.method : 'POST';
+                    form.value.webhookContentType = config.contentType || 'application/json';
+                    form.value.webhookAuthType = config.authType === 'bearer' ? 'none' : (config.authType || 'none');
+                    form.value.webhookHmacAlgorithm = config.hmacAlgorithm || 'sha256';
+                    form.value.webhookSecret = config.secret || '';
+                    form.value.queryParams = (config.queryParams || []).map(p => ({
+                        name: p.name, type: p.type || 'string', required: !!p.required
+                    }));
+                    form.value.headerParams = (config.headerParams || []).map(p => ({
+                        name: p.name, required: !!p.required
+                    }));
+                    const bodySource = config.bodyParams || config.fields || [];
+                    form.value.bodyParams = bodySource.map(p => ({
+                        name: p.name, type: p.type || 'string', required: !!p.required
+                    }));
+                };
+                const buildWebhookConfig = (path) => {
+                    const config = {
+                        path,
+                        method: form.value.webhookMethod,
+                        contentType: form.value.webhookContentType,
+                        authType: form.value.webhookAuthType,
+                        queryParams: normalizeQueryParams(form.value.queryParams),
+                        headerParams: normalizeHeaderParams(form.value.headerParams),
+                        bodyParams: normalizeBodyParams(form.value.bodyParams)
+                    };
+                    if (form.value.webhookAuthType === 'hmac') {
+                        config.hmacAlgorithm = form.value.webhookHmacAlgorithm || 'sha256';
+                        config.secret = form.value.webhookSecret;
+                    }
+                    return config;
+                };
+                const validateWebhookForm = () => {
+                    if (!form.value.webhookPath) {
+                        ElementPlus.ElMessage.warning('回调地址未生成，请重新选择 WebHook 类型');
+                        return false;
+                    }
+                    if (form.value.webhookAuthType === 'hmac' && !form.value.webhookSecret.trim()) {
+                        ElementPlus.ElMessage.warning('签名校验需要密钥，请点击重置生成');
+                        return false;
+                    }
+                    if (!validateParamList(form.value.queryParams, 'Query Parameters')) return false;
+                    if (!validateParamList(form.value.headerParams, 'Header Parameters')) return false;
+                    if (!validateParamList(form.value.bodyParams, 'Request Body Parameters')) return false;
+                    return true;
+                };
+
                 const clearFilter = (type) => {
                     if (type === 'sourceType') filterSourceType.value = '';
                     if (type === 'status') filterStatus.value = '';
@@ -843,10 +1037,7 @@
                     form.value.name = rule.name;
                     form.value.sourceType = rule.type;
                     if (rule.type === 'WebHook') {
-                        form.value.webhookPath = rule.config.path || '';
-                        form.value.webhookMethod = rule.config.method || 'POST';
-                        form.value.webhookContentType = rule.config.contentType || 'application/json';
-                        form.value.webhookAuthType = rule.config.authType || 'none';
+                        fillWebhookFormFromConfig(rule.config);
                     }
                     isDrawerOpen.value = true;
                 };
@@ -885,6 +1076,9 @@
                         pulsarUsername: '',
                         pulsarPassword: '',
                         pulsarFields: [],
+                        queryParams: [],
+                        headerParams: [],
+                        bodyParams: [],
                         kafkaBootstrapServers: '',
                         kafkaTopic: '',
                         kafkaGroupId: '',
@@ -898,7 +1092,6 @@
                         webhookSecret: '',
                         webhookHmacAlgorithm: 'sha256'
                     };
-                    showHmacSecret.value = false;
                     showPulsarToken.value = false;
                     showKafkaPassword.value = false;
                 };
@@ -912,6 +1105,24 @@
                     if (index === -1) form.value.timerMonthDays.push(day);
                     else form.value.timerMonthDays.splice(index, 1);
                 };
+                const addQueryParam = () => {
+                    form.value.queryParams.push({ name: '', type: 'string', required: false });
+                };
+                const removeQueryParam = (idx) => {
+                    form.value.queryParams.splice(idx, 1);
+                };
+                const addHeaderParam = () => {
+                    form.value.headerParams.push({ name: '', required: false });
+                };
+                const removeHeaderParam = (idx) => {
+                    form.value.headerParams.splice(idx, 1);
+                };
+                const addBodyParam = () => {
+                    form.value.bodyParams.push({ name: '', type: 'string', required: false });
+                };
+                const removeBodyParam = (idx) => {
+                    form.value.bodyParams.splice(idx, 1);
+                };
                 const addField = () => {
                     form.value.pulsarFields.push({ name: '', type: 'String (文本)' });
                 };
@@ -919,8 +1130,11 @@
                     form.value.pulsarFields.splice(idx, 1);
                 };
                 const saveConfig = () => {
-                    if (!form.value.name) {
-                        alert('请输入事件名称');
+                    if (!form.value.name.trim()) {
+                        ElementPlus.ElMessage.warning('请输入事件名称');
+                        return;
+                    }
+                    if (form.value.sourceType === 'WebHook' && !validateWebhookForm()) {
                         return;
                     }
                     let config = {};
@@ -945,25 +1159,22 @@
                     } else if (form.value.sourceType === 'Kafka') {
                         config = { bootstrapServers: form.value.kafkaBootstrapServers, topic: form.value.kafkaTopic };
                     } else if (form.value.sourceType === 'WebHook') {
-                        config = { 
-                            path: form.value.webhookPath, 
-                            method: form.value.webhookMethod, 
-                            contentType: form.value.webhookContentType, 
-                            authType: form.value.webhookAuthType 
-                        };
+                        config = buildWebhookConfig(form.value.webhookPath);
                     }
                     if (isEditMode.value) {
                         const index = ruleList.value.findIndex(r => r.id === editingRuleId.value);
                         if (index !== -1) {
-                            ruleList.value[index].name = form.value.name;
+                            ruleList.value[index].name = form.value.name.trim();
                             ruleList.value[index].type = form.value.sourceType;
                             ruleList.value[index].config = config;
                         }
+                        isDrawerOpen.value = false;
+                        ElementPlus.ElMessage.success('修改成功');
                     } else {
                         const newId = ruleList.value.length > 0 ? Math.max(...ruleList.value.map(r => r.id)) + 1 : 1;
                         ruleList.value.push({
                             id: newId,
-                            name: form.value.name,
+                            name: form.value.name.trim(),
                             type: form.value.sourceType,
                             status: true,
                             triggerCount: 0,
@@ -972,15 +1183,25 @@
                             rules: [],
                             agents: []
                         });
+                        isDrawerOpen.value = false;
+                        ElementPlus.ElMessage.success('创建成功');
                     }
-                    isDrawerOpen.value = false;
-                    alert(isEditMode.value ? '修改成功' : '创建成功');
                 };
                 const openAgentRunLog = (rule) => {
                     window.location.href = `事件任务详情.html?id=${rule.id}`;
                 };
                 const handleSourceTypeChange = () => {
                     form.value.pulsarFields = [];
+                    form.value.queryParams = [];
+                    form.value.headerParams = [];
+                    form.value.bodyParams = [];
+                    if (form.value.sourceType === 'WebHook') {
+                        ensureWebhookPath();
+                    } else {
+                        form.value.webhookPath = '';
+                        form.value.webhookSecret = '';
+                        form.value.webhookAuthType = 'none';
+                    }
                 };
 
                 onMounted(() => {
@@ -997,10 +1218,13 @@
                     isDrawerOpen, isEditMode, isLogDrawerOpen, isDeleteModalOpen,
                     selectedEventLog, selectedEventToDelete,
                     searchKeyword, filterSourceType, filterStatus, filterAgent,
-                    showHmacSecret, showPulsarToken, showKafkaPassword,
+                    showPulsarToken, showKafkaPassword,
                     form, ruleList, currentEventLogs, filteredRuleList, currentPage, pageSize, pagedRuleList,
+                    getWebhookFullUrl, getAuthTypeLabel, copyText, copyWebhookUrl,
+                    resetWebhookSecret, handleWebhookAuthChange, toggleWebhookSignature,
                     openDrawer, openEditDrawer, openLogDrawer, openDeleteModal, confirmDelete,
                     resetForm, toggleDay, toggleMonthDay, addField, removeField,
+                    addQueryParam, removeQueryParam, addHeaderParam, removeHeaderParam, addBodyParam, removeBodyParam,
                     saveConfig, openAgentRunLog, handleSourceTypeChange
                 };
             }
