@@ -170,6 +170,7 @@
         .task-source-dot.webhook { background: #10b981; }
         .task-source-dot.kafka { background: #8b5cf6; }
         .task-source-dot.pulsar { background: #3b82f6; }
+        .task-source-dot.mqtt { background: #14b8a6; }
         .task-more-dropdown {
             border-radius: 8px !important;
             box-shadow: 0 4px 16px rgba(15,23,42,0.08) !important;
@@ -190,6 +191,44 @@
         }
         .webhook-auth-tag.none { background: #f1f5f9; color: #64748b; }
         .webhook-auth-tag.api_key { background: #ede9fe; color: #6d28d9; }
+        .field-label-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .field-label-row .field-label-text {
+            font-size: 14px;
+            color: #334155;
+        }
+        .field-help-trigger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 1px solid #cbd5e1;
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: help;
+            flex-shrink: 0;
+            user-select: none;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .field-help-trigger:hover {
+            border-color: #94a3b8;
+            color: #64748b;
+        }
+        .field-help-tooltip {
+            max-width: 320px;
+            line-height: 1.55;
+        }
+        .field-help-tooltip-body {
+            white-space: normal;
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden">
@@ -211,6 +250,7 @@
                         <el-option label="Pulsar" value="Pulsar"></el-option>
                         <el-option label="Timer" value="Timer"></el-option>
                         <el-option label="Kafka" value="Kafka"></el-option>
+                        <el-option label="MQTT" value="MQTT"></el-option>
                         <el-option label="WebHook" value="WebHook"></el-option>
                     </el-select>
                     <span class="log-filter-label" style="margin-left: 8px;">启停状态</span>
@@ -253,6 +293,7 @@
                             <div v-else-if="scope.row.type !== 'Timer'" style="display:flex;flex-direction:column;gap:4px;font-size:12px;">
                                 <span style="color:#64748b;" v-if="scope.row.config.ip">IP：{{ scope.row.config.ip }}</span>
                                 <span style="color:#64748b;" v-if="scope.row.config.bootstrapServers">Broker：{{ scope.row.config.bootstrapServers }}</span>
+                                <span style="color:#64748b;" v-if="scope.row.config.broker">Broker：{{ scope.row.config.broker }}</span>
                                 <span style="color:#64748b;font-family:monospace;">Topic：{{ scope.row.config.topic }}</span>
                             </div>
                             <div v-else style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;background:#f8fafc;padding:4px 10px;border-radius:4px;border:1px solid #e2e8f0;">
@@ -331,16 +372,17 @@
                 </div>
                 <div class="flex-1 overflow-y-auto p-8 space-y-7">
                     <div>
-                        <label class="block text-sm text-slate-700 mb-2">事件名称</label>
+                        <field-label label="事件名称"></field-label>
                         <input type="text" v-model="form.name" placeholder="输入事件名称" class="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:bg-white focus:border-blue-500 transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm text-slate-700 mb-2">触发源类型</label>
+                        <field-label label="触发源类型" tip="选择事件如何被触发：<br>· Timer：定时调度<br>· Pulsar / Kafka / MQTT：订阅消息<br>· WebHook：外部 HTTP 回调"></field-label>
                         <div class="relative">
                             <select v-model="form.sourceType" @change="handleSourceTypeChange" class="w-full appearance-none bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:bg-white focus:border-blue-500">
                                 <option value="Timer">Timer</option>
                                 <option value="Pulsar">Pulsar</option>
                                 <option value="Kafka">Kafka</option>
+                                <option value="MQTT">MQTT</option>
                                 <option value="WebHook">WebHook</option>
                             </select>
                             <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
@@ -357,13 +399,13 @@
                             </button>
                         </div>
                         <div v-if="form.useCron">
-                            <label class="block text-sm text-slate-500 mb-2">Cron 表达式</label>
+                            <field-label label="Cron 表达式" muted tip="标准 Cron 表达式，精确控制触发时刻。<br>示例：0 0 8 * * ? 表示每天 8:00 触发。"></field-label>
                             <input type="text" v-model="form.cronExpression" placeholder="* * * * * ?" class="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm font-mono outline-none focus:bg-white focus:border-blue-500">
                         </div>
                         <div v-else class="space-y-5">
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-[13px] text-slate-500 mb-2">频率</label>
+                                    <field-label label="频率" muted tip="可视化配置触发周期：每小时、每日、每周或每月。"></field-label>
                                     <div class="relative">
                                         <select v-model="form.timerFreq" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none cursor-pointer">
                                             <option value="hourly">每小时</option>
@@ -376,14 +418,14 @@
                                 </div>
                                 <div>
                                     <div v-if="form.timerFreq === 'hourly'">
-                                        <label class="block text-[13px] text-slate-500 mb-2">分钟</label>
+                                        <field-label label="分钟" muted tip="每小时触发时的分钟数，取值 0–59。"></field-label>
                                         <div class="flex items-center gap-3 bg-slate-50/50 border border-slate-200 rounded-md px-3 py-1.5 h-[38px]">
                                             <span class="text-sm w-5 text-center">{{ form.timerMinute }}</span>
                                             <input type="range" v-model="form.timerMinute" min="0" max="59" class="flex-1 bg-slate-200 h-1.5 rounded-lg appearance-none">
                                         </div>
                                     </div>
                                     <div v-else>
-                                        <label class="block text-[13px] text-slate-500 mb-2">时间</label>
+                                        <field-label label="时间" muted tip="每日 / 每周 / 每月模式下的具体触发时刻。"></field-label>
                                         <div class="relative flex items-center bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 h-[38px]">
                                             <input type="time" v-model="form.timerTime" class="bg-transparent border-none outline-none text-sm w-full relative z-10 text-slate-700">
                                             <div class="absolute right-3 flex items-center gap-1.5 text-[12px] text-slate-400 z-0">
@@ -394,17 +436,17 @@
                                 </div>
                             </div>
                             <div v-if="form.timerFreq === 'weekly'">
-                                <label class="block text-[13px] text-slate-500 mb-2">星期</label>
+                                <field-label label="星期" muted tip="每周模式下选择触发的星期，可多选。"></field-label>
                                 <div class="flex gap-2">
                                     <button v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day" @click="toggleDay(day)" :class="form.timerWeekDays.includes(day) ? 'border-blue-600 text-blue-600 font-medium' : 'border-slate-200 text-slate-600 hover:border-slate-300'" class="flex-1 py-1.5 border rounded-md text-[13px] transition-colors">{{ day }}</button>
                                 </div>
                             </div>
                             <div v-if="form.timerFreq === 'monthly'">
-                                <label class="block text-[13px] text-slate-500 mb-2">天</label>
+                                <field-label label="天" muted tip="每月模式下选择触发的日期，可多选；「最后一天」适用于月末报表等场景。"></field-label>
                                 <div class="grid grid-cols-7 gap-2">
                                     <button v-for="d in 31" :key="d" @click="toggleMonthDay(d)" :class="form.timerMonthDays.includes(d) ? 'border-blue-600 text-blue-600 font-medium bg-blue-50/30' : 'border-slate-200 text-slate-600 hover:border-slate-300'" class="py-1.5 border rounded-md text-[13px] transition-colors">{{ d }}</button>
                                     <button @click="toggleMonthDay('last')" :class="form.timerMonthDays.includes('last') ? 'border-blue-600 text-blue-600 font-medium bg-blue-50/30' : 'border-slate-200 text-slate-600 hover:border-slate-300'" class="col-span-3 py-1.5 border rounded-md text-[13px] transition-colors flex items-center justify-center gap-1">
-                                        最后一天 <i data-lucide="help-circle" class="w-3 h-3 text-slate-400"></i>
+                                        最后一天
                                     </button>
                                 </div>
                             </div>
@@ -415,17 +457,17 @@
                     <div v-if="form.sourceType === 'Pulsar'" class="space-y-6">
                         <h3 class="text-[15px] font-bold text-slate-800">基础配置</h3>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2"><span class="text-red-500">*</span> 服务地址</label>
+                            <field-label label="服务地址" required tip="Apache Pulsar 集群连接地址。<br>格式：pulsar://主机:6650 或 pulsar+ssl://主机:6651（TLS）。"></field-label>
                             <input type="text" v-model="form.serviceUrl" placeholder="例: pulsar://10.0.1.2:6650" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2"><span class="text-red-500">*</span> 订阅主题 (Topic)</label>
+                            <field-label label="订阅主题 (Topic)" required tip="完整 Topic 路径，含持久化类型与租户命名空间。<br>示例：persistent://public/default/my-topic"></field-label>
                             <input type="text" v-model="form.topic" placeholder="例: persistent://public/default/my-topic" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500">
                         </div>
                         <div class="h-px bg-slate-100 my-4"></div>
                         <h3 class="text-[15px] font-bold text-slate-800">安全与鉴权</h3>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2">鉴权方式</label>
+                            <field-label label="鉴权方式" tip="无鉴权：内网测试可用。<br>Token 鉴权：使用 JWT 或平台颁发的访问令牌连接 Pulsar。"></field-label>
                             <div class="relative">
                                 <select v-model="form.authMethod" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
                                     <option value="none">无鉴权</option>
@@ -433,11 +475,9 @@
                                 </select>
                                 <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1" v-if="form.authMethod === 'none'">无需填写任何认证信息，直接连接</p>
-                            <p class="text-[11px] text-slate-400 mt-1" v-else-if="form.authMethod === 'token'">使用 Token 进行身份验证</p>
                         </div>
                         <div v-if="form.authMethod === 'token'">
-                            <label class="block text-sm text-slate-700 mb-2"><span class="text-red-500">*</span> 访问凭证 (Token)</label>
+                            <field-label label="访问凭证 (Token)" required tip="Pulsar 认证令牌，通常由集群管理员颁发；连接时用于身份验证。"></field-label>
                             <div class="relative">
                                 <input :type="showPulsarToken ? 'text' : 'password'" v-model="form.credential" placeholder="输入 Pulsar Token" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 pr-10">
                                 <button type="button" @click="showPulsarToken = !showPulsarToken" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -450,7 +490,10 @@
                         <!-- 字段配置 -->
                         <div>
                             <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-sm font-bold text-slate-800">事件数据字段配置</h3>
+                                <div class="field-label-row" style="margin-bottom:0;">
+                                    <h3 class="text-sm font-bold text-slate-800">事件数据字段配置</h3>
+                                    <field-help tip="从消息 Payload（JSON）中提取业务字段，供下游事件任务引用。<br>配置后工作流才能正确解析并引用事件内容。"></field-help>
+                                </div>
                                 <button @click="addField()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加字段</button>
                             </div>
                             <div class="border border-slate-200 rounded-md overflow-hidden">
@@ -484,7 +527,6 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-2">提示：配置字段后，下游工作流才能正确解析并引用事件内容。</p>
                         </div>
                     </div>
 
@@ -492,25 +534,25 @@
                     <div v-if="form.sourceType === 'Kafka'" class="space-y-6">
                         <h3 class="text-[15px] font-bold text-slate-800">基础配置</h3>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2"><span class="text-red-500">*</span> 服务地址 (Bootstrap Servers)</label>
+                            <field-label label="服务地址 (Bootstrap Servers)" required tip="Kafka 集群 Broker 地址列表，多个用英文逗号分隔。<br>示例：192.168.1.1:9092,192.168.1.2:9092"></field-label>
                             <input type="text" v-model="form.kafkaBootstrapServers" placeholder="例: 192.168.1.1:9092,192.168.1.2:9092" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2"><span class="text-red-500">*</span> 订阅主题 (Topic)</label>
+                            <field-label label="订阅主题 (Topic)" required tip="要消费的消息主题名称；仅该 Topic 上的新消息会触发本事件。"></field-label>
                             <input type="text" v-model="form.kafkaTopic" placeholder="例: device_events" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2"><span class="text-red-500">*</span> 消费者组 ID (Group ID)</label>
+                            <field-label label="消费者组 ID (Group ID)" required tip="消费者组标识；同组内消费者共享分区与消费位点，新建事件请使用独立 Group ID。"></field-label>
                             <input type="text" v-model="form.kafkaGroupId" placeholder="例: rule-engine-group-01" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2">消费起始位置 (Offset Reset)</label>
+                            <field-label label="消费起始位置 (Offset Reset)" tip="无历史消费位点时的起始策略；Latest 表示从最新偏移量开始，仅消费配置生效后的新消息。"></field-label>
                             <input type="text" value="最新的数据 (Latest)" readonly class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 cursor-not-allowed">
                         </div>
                         <div class="h-px bg-slate-100 my-4"></div>
-                        <h3 class="text-[15px] font-bold text-slate-800">安全与鉴权配置</h3>
+                        <h3 class="text-[15px] font-bold text-slate-800">安全与鉴权</h3>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2">鉴权方式</label>
+                            <field-label label="鉴权方式" tip="无鉴权：内网测试可用。<br>SASL_PLAINTEXT：用户名密码明文认证，生产环境建议配合 TLS 使用。"></field-label>
                             <div class="relative">
                                 <select v-model="form.kafkaSecurityProtocol" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
                                     <option value="none">无鉴权</option>
@@ -518,16 +560,14 @@
                                 </select>
                                 <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1" v-if="form.kafkaSecurityProtocol === 'none'">直接连接,仅适用于内网测试环境</p>
-                            <p class="text-[11px] text-slate-400 mt-1" v-else-if="form.kafkaSecurityProtocol === 'SASL_PLAINTEXT'">明文传输用户名密码,安全性较低;通常还需指定 SASL 机制</p>
                         </div>
                         <div v-if="form.kafkaSecurityProtocol === 'SASL_PLAINTEXT'" class="space-y-4">
                             <div>
-                                <label class="block text-sm text-slate-700 mb-2"><span class="text-red-500">*</span> 用户名 (Username)</label>
+                                <field-label label="用户名 (Username)" required tip="Kafka SASL 认证用户名，须与集群侧配置一致。"></field-label>
                                 <input type="text" v-model="form.kafkaUsername" placeholder="输入Kafka用户名" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500">
                             </div>
                             <div>
-                                <label class="block text-sm text-slate-700 mb-2"><span class="text-red-500">*</span> 密码 (Password)</label>
+                                <field-label label="密码 (Password)" required tip="Kafka SASL 认证密码，仅用于连接鉴权。"></field-label>
                                 <div class="relative">
                                     <input :type="showKafkaPassword ? 'text' : 'password'" v-model="form.kafkaPassword" placeholder="输入Kafka密码" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 pr-10">
                                     <button type="button" @click="showKafkaPassword = !showKafkaPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -541,7 +581,10 @@
                         <!-- 字段配置 -->
                         <div>
                             <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-sm font-bold text-slate-800">事件数据字段配置</h3>
+                                <div class="field-label-row" style="margin-bottom:0;">
+                                    <h3 class="text-sm font-bold text-slate-800">事件数据字段配置</h3>
+                                    <field-help tip="从 Kafka 消息 Value（JSON）中提取业务字段，供下游事件任务引用。<br>配置后工作流才能正确解析并引用事件内容。"></field-help>
+                                </div>
                                 <button @click="addField()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加字段</button>
                             </div>
                             <div class="border border-slate-200 rounded-md overflow-hidden">
@@ -554,7 +597,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100">
-                                        <tr v-for="(field, idx) in form.pulsarFields" :key="idx" class="bg-white">
+                                        <tr v-for="(field, idx) in form.pulsarFields" :key="'kafka'+idx" class="bg-white">
                                             <td class="px-3 py-1.5"><input type="text" v-model="field.name" placeholder="例如: device_id" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-2 py-1 outline-none text-[13px]"></td>
                                             <td class="px-3 py-1.5">
                                                 <select v-model="field.type" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-1 py-1 outline-none text-[13px] bg-transparent cursor-pointer">
@@ -575,7 +618,124 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-2">提示：配置字段后，下游工作流才能正确解析并引用事件内容。</p>
+                        </div>
+                    </div>
+
+                    <!-- MQTT 配置 -->
+                    <div v-if="form.sourceType === 'MQTT'" class="space-y-6">
+                        <h3 class="text-[15px] font-bold text-slate-800">基础配置</h3>
+                        <div>
+                            <field-label label="Broker 地址" required tip="MQTT 消息代理地址。启用事件后将建立 TCP 长连接并持续订阅。<br>格式：mqtt://主机:1883（明文）或 mqtts://主机:8883（TLS 加密）。"></field-label>
+                            <input type="text" v-model="form.mqttBroker" placeholder="例: mqtt://192.168.1.100:1883" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <field-label label="订阅主题 (Topic)" required tip="要监听的消息频道，层级用 / 分隔。<br>+ 匹配单层（如 factory/+/telemetry）；<br># 匹配多层，仅可放在末尾（如 factory/#）。<br>仅发布到匹配 Topic 的消息会触发本事件。"></field-label>
+                            <input type="text" v-model="form.mqttTopic" placeholder="例: factory/line1/+/telemetry" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm font-mono outline-none focus:border-blue-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <field-label label="Client ID" required tip="本连接在 Broker 上的唯一标识，启用后维持长连接时使用。<br>同一 Client ID 同时只能有一个活跃连接，重复会导致互踢断线。<br>多事件、多实例请使用不同 ID，或点「重新生成」。"></field-label>
+                                <div class="flex gap-2">
+                                    <input type="text" v-model="form.mqttClientId" placeholder="evt-platform-001" class="flex-1 min-w-0 bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm font-mono outline-none focus:border-blue-500">
+                                    <button type="button" @click="regenerateMqttClientId()" class="shrink-0 px-3 py-2 text-xs font-medium text-slate-600 border border-slate-200 rounded-md hover:bg-slate-50 transition-colors bg-white">重新生成</button>
+                                </div>
+                            </div>
+                            <div>
+                                <field-label label="QoS" required tip="消息送达可靠性（订阅端与发布端取较低者生效）：<br>· QoS 0（最多一次）：不确认、不重传，可能丢消息；适合高频遥测。<br>· QoS 1（至少一次）：有确认与重传，可能重复；告警、状态变更推荐。<br>· QoS 2（恰好一次）：四次握手，不丢不重，开销最大；关键业务且下游需幂等去重。"></field-label>
+                                <div class="relative">
+                                    <select v-model.number="form.mqttQos" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
+                                        <option :value="0">0 - 最多一次</option>
+                                        <option :value="1">1 - 至少一次</option>
+                                        <option :value="2">2 - 恰好一次</option>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <field-label label="Clean Session" tip="控制断线后会话是否保留：<br>· 是：断开后清除会话与订阅，重连需重新 SUBSCRIBE；适合临时联调。<br>· 否：断开后保留会话与订阅，重连可恢复；7×24 常驻监听推荐选否。"></field-label>
+                                <div class="relative">
+                                    <select v-model="form.mqttCleanSession" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
+                                        <option :value="true">是（断开后清除会话）</option>
+                                        <option :value="false">否（保留订阅状态）</option>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <field-label label="Keep Alive (秒)" tip="长连接心跳间隔；无消息时平台会自动发 PING 维持连接。<br>若超过约 1.5 倍该时长完全无通信，Broker 会判定断线。<br>内网常用 60 秒；弱网或易断链环境可适当缩短。"></field-label>
+                                <input type="number" v-model.number="form.mqttKeepAlive" min="10" max="65535" placeholder="60" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+                        <div class="h-px bg-slate-100 my-4"></div>
+                        <h3 class="text-[15px] font-bold text-slate-800">安全与鉴权</h3>
+                        <div>
+                            <field-label label="鉴权方式" tip="无鉴权：内网测试可用，生产环境不推荐。<br>用户名 / 密码：与 Broker ACL 配合，限制可连接账号及可订阅的 Topic 范围。"></field-label>
+                            <div class="relative">
+                                <select v-model="form.mqttAuthMethod" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
+                                    <option value="none">无鉴权</option>
+                                    <option value="username">用户名 / 密码</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <div v-if="form.mqttAuthMethod === 'username'" class="space-y-4">
+                            <div>
+                                <field-label label="用户名 (Username)" required tip="Broker 上配置的应用账号，需具备目标 Topic 的订阅（SUBSCRIBE）权限。"></field-label>
+                                <input type="text" v-model="form.mqttUsername" placeholder="输入 MQTT 用户名" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <field-label label="密码 (Password)" required tip="与用户名配对的连接密码，仅用于 MQTT 连接鉴权，须与 Broker 侧配置一致。"></field-label>
+                                <div class="relative">
+                                    <input :type="showMqttPassword ? 'text' : 'password'" v-model="form.mqttPassword" placeholder="输入 MQTT 密码" class="w-full bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 pr-10">
+                                    <button type="button" @click="showMqttPassword = !showMqttPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                        <i data-lucide="eye" v-if="!showMqttPassword" class="w-4 h-4"></i>
+                                        <i data-lucide="eye-off" v-else class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-px bg-slate-100 my-4"></div>
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="field-label-row" style="margin-bottom:0;">
+                                    <h3 class="text-sm font-bold text-slate-800">事件数据字段配置</h3>
+                                    <field-help tip="从 MQTT Payload（JSON）中提取业务字段，供下游事件任务引用。<br>原始消息保留为 _mqtt_raw，实际 Topic 保留为 _mqtt_topic。"></field-help>
+                                </div>
+                                <button @click="addField()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加字段</button>
+                            </div>
+                            <div class="border border-slate-200 rounded-md overflow-hidden">
+                                <table class="w-full text-left text-[13px]">
+                                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
+                                        <tr>
+                                            <th class="px-3 py-2 font-medium w-[45%]">字段名 (Key)</th>
+                                            <th class="px-3 py-2 font-medium w-[40%]">数据类型</th>
+                                            <th class="px-3 py-2 font-medium w-[15%] text-center">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <tr v-for="(field, idx) in form.pulsarFields" :key="'mqtt'+idx" class="bg-white">
+                                            <td class="px-3 py-1.5"><input type="text" v-model="field.name" placeholder="例如: temperature" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-2 py-1 outline-none text-[13px]"></td>
+                                            <td class="px-3 py-1.5">
+                                                <select v-model="field.type" class="w-full border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-1 py-1 outline-none text-[13px] bg-transparent cursor-pointer">
+                                                    <option>String (文本)</option>
+                                                    <option>Number (数值)</option>
+                                                    <option>Boolean (布尔)</option>
+                                                </select>
+                                            </td>
+                                            <td class="px-3 py-1.5 text-center">
+                                                <button @click="removeField(idx)" class="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all" title="删除字段">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="form.pulsarFields.length === 0">
+                                            <td colspan="3" class="px-3 py-4 text-center text-slate-400 text-xs italic">暂未配置任何解析字段</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -584,7 +744,7 @@
                         <h3 class="text-[15px] font-bold text-slate-800">Webhook 信息</h3>
                         <div v-if="form.webhookPath" class="space-y-5">
                             <div>
-                                <label class="block text-sm text-slate-700 mb-2">Webhook URL</label>
+                                <field-label label="Webhook URL" tip="平台分配的 HTTP 回调地址；外部系统以所选请求方式调用此 URL 即可触发本事件。<br>左侧下拉为允许的 HTTP 方法（GET / POST / PUT）。"></field-label>
                                 <div class="flex gap-2 items-stretch">
                                     <div class="relative w-[110px] shrink-0">
                                         <select v-model="form.webhookMethod" title="请求方式" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
@@ -597,23 +757,24 @@
                                     <input type="text" readonly :value="getWebhookFullUrl(form.webhookPath)" title="回调地址" class="flex-1 min-w-0 bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm font-mono text-slate-700 outline-none cursor-not-allowed">
                                     <button type="button" @click="copyWebhookUrl(form.webhookPath)" class="shrink-0 px-3 py-2 text-xs font-medium text-blue-600 border border-slate-200 rounded-md hover:bg-blue-50 transition-colors bg-white">复制</button>
                                 </div>
-                                <p class="text-[11px] text-slate-400 mt-1">外部系统使用所选请求方式调用此 URL，即可触发本事件。</p>
                             </div>
                             <div>
-                                <label class="block text-sm text-slate-700 mb-2">密钥</label>
+                                <field-label label="密钥" tip="创建事件时自动生成。外部请求须在 Header 中携带：<br>Authorization: Bearer &lt;密钥&gt;<br>用于验证回调来源，可点击「重置」轮换密钥。"></field-label>
                                 <div class="flex gap-2 items-center">
                                     <input type="text" readonly :value="form.webhookApiKey" class="flex-1 bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm font-mono outline-none cursor-not-allowed">
                                     <button type="button" @click="copyText(form.webhookApiKey)" class="shrink-0 px-3 py-2 text-xs font-medium text-blue-600 border border-slate-200 rounded-md hover:bg-blue-50 transition-colors bg-white">复制</button>
                                     <button type="button" @click="resetWebhookApiKey()" class="shrink-0 px-3 py-2 text-xs font-medium text-slate-600 border border-slate-200 rounded-md hover:bg-slate-50 transition-colors bg-white">重置</button>
                                 </div>
-                                <p class="text-[11px] text-slate-400 mt-1">创建事件时自动生成，外部请求需在 Header 中携带：<code class="text-xs bg-slate-100 px-1 rounded">Authorization: Bearer &lt;密钥&gt;</code></p>
                             </div>
                         </div>
 
                         <div class="h-px bg-slate-100 my-4"></div>
-                        <h3 class="text-[15px] font-bold text-slate-800">入参配置</h3>
+                        <div class="flex items-center gap-2 mb-4">
+                            <h3 class="text-[15px] font-bold text-slate-800">入参配置</h3>
+                            <field-help tip="声明外部 HTTP 请求中的业务参数，供平台解析并在下游任务中引用。<br>鉴权 Header（Authorization）由上方密钥自动处理，无需在此重复声明。"></field-help>
+                        </div>
                         <div>
-                            <label class="block text-sm text-slate-700 mb-2">内容类型 (Content-Type)</label>
+                            <field-label label="内容类型 (Content-Type)" tip="声明请求 Body 的数据格式，便于平台正确解析。<br>GET 请求通常无 Body，以 Query 参数为主。"></field-label>
                             <div class="relative">
                                 <select v-model="form.webhookContentType" class="w-full appearance-none bg-slate-50/50 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 outline-none cursor-pointer focus:border-blue-500">
                                     <option value="application/json">application/json</option>
@@ -624,16 +785,16 @@
                                 </select>
                                 <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">声明请求 Body 的数据格式；GET 通常无 Body，以 Query 参数为主。</p>
                         </div>
 
                         <div>
-                            <p class="text-[11px] text-slate-400 mb-4">声明外部请求中的业务参数，供平台解析引用。鉴权 Header（Authorization）由上方密钥自动处理，无需在此重复声明。</p>
-
                             <!-- Query Parameters -->
                             <div class="mb-5">
                                 <div class="flex items-center justify-between mb-3">
-                                    <h3 class="text-sm font-bold text-slate-800">Query Parameters</h3>
+                                    <div class="field-label-row" style="margin-bottom:0;">
+                                        <h3 class="text-sm font-bold text-slate-800">Query Parameters</h3>
+                                        <field-help tip="URL 查询字符串中的参数（?key=value），常用于 GET 请求或 POST 的附加参数。"></field-help>
+                                    </div>
                                     <button type="button" @click="addQueryParam()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加</button>
                                 </div>
                                 <div class="border border-slate-200 rounded-md overflow-hidden">
@@ -674,7 +835,10 @@
                             <!-- Header Parameters -->
                             <div class="mb-5">
                                 <div class="flex items-center justify-between mb-3">
-                                    <h3 class="text-sm font-bold text-slate-800">Header Parameters</h3>
+                                    <div class="field-label-row" style="margin-bottom:0;">
+                                        <h3 class="text-sm font-bold text-slate-800">Header Parameters</h3>
+                                        <field-help tip="除 Authorization 外的自定义请求头参数；例如 X-GitHub-Event、X-Request-Id 等。"></field-help>
+                                    </div>
                                     <button type="button" @click="addHeaderParam()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加</button>
                                 </div>
                                 <div class="border border-slate-200 rounded-md overflow-hidden">
@@ -707,7 +871,10 @@
                             <!-- Request Body Parameters -->
                             <div>
                                 <div class="flex items-center justify-between mb-3">
-                                    <h3 class="text-sm font-bold text-slate-800">Request Body Parameters</h3>
+                                    <div class="field-label-row" style="margin-bottom:0;">
+                                        <h3 class="text-sm font-bold text-slate-800">Request Body Parameters</h3>
+                                        <field-help tip="HTTP 请求 Body 中的 JSON / 表单字段声明。<br>原始请求完整保留为 payload._webhook_raw，供下游兜底引用。"></field-help>
+                                    </div>
                                     <button type="button" @click="addBodyParam()" class="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加</button>
                                 </div>
                                 <div class="border border-slate-200 rounded-md overflow-hidden">
@@ -744,7 +911,6 @@
                                     </table>
                                 </div>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-2">原始请求仍会完整保留为 <code class="text-xs bg-slate-100 px-1 rounded">payload._webhook_raw</code>，供下游兜底引用。</p>
                         </div>
                     </div>
                 </div>
@@ -808,6 +974,34 @@
 
         const WEBHOOK_BASE_URL = 'https://api.event-platform.local';
 
+        const FieldHelp = {
+            props: { tip: { type: String, required: true } },
+            template: `
+                <el-tooltip placement="top" :show-after="200" :hide-after="0" effect="dark" popper-class="field-help-tooltip">
+                    <template #content><div class="field-help-tooltip-body" v-html="tip"></div></template>
+                    <span class="field-help-trigger" tabindex="0">?</span>
+                </el-tooltip>
+            `
+        };
+
+        const FieldLabel = {
+            components: { FieldHelp },
+            props: {
+                label: { type: String, required: true },
+                required: { type: Boolean, default: false },
+                tip: { type: String, default: '' },
+                muted: { type: Boolean, default: false }
+            },
+            template: `
+                <div class="field-label-row">
+                    <span class="field-label-text" :class="muted ? 'text-[13px] text-slate-500' : ''">
+                        <span v-if="required" class="text-red-500">*</span><span v-if="required"> </span>{{ label }}
+                    </span>
+                    <field-help v-if="tip" :tip="tip" />
+                </div>
+            `
+        };
+
         const app = createApp({
             setup() {
                 const isDrawerOpen = ref(false);
@@ -823,6 +1017,7 @@
                 const filterAgent = ref('');
                 const showPulsarToken = ref(false);
                 const showKafkaPassword = ref(false);
+                const showMqttPassword = ref(false);
                 const editingRuleId = ref(null);
                 const form = ref({
                     name: '',
@@ -853,7 +1048,16 @@
                     webhookPath: '',
                     webhookMethod: 'POST',
                     webhookContentType: 'application/json',
-                    webhookApiKey: ''
+                    webhookApiKey: '',
+                    mqttBroker: '',
+                    mqttTopic: '',
+                    mqttClientId: '',
+                    mqttQos: 1,
+                    mqttCleanSession: false,
+                    mqttKeepAlive: 60,
+                    mqttAuthMethod: 'none',
+                    mqttUsername: '',
+                    mqttPassword: ''
                 });
                 const ruleList = ref([
                     { id: 1, name: '电表电压过高告警订阅', type: 'Pulsar', status: true, triggerCount: 1256, showMore: false, config: { ip: '10.0.1.2:6650', topic: 'persistent://electricity/alert/' }, rules: ['电压预警', '电流异常'], agents: [] },
@@ -862,7 +1066,8 @@
                     { id: 4, name: 'SMT贴片机停机信号订阅', type: 'Pulsar', status: false, triggerCount: 12, showMore: false, config: { ip: 'pulsar.factory.local:6650', topic: 'industrial/smt/stop_code' }, rules: [], agents: [] },
                     { id: 5, name: 'GitHub 代码提交通知', type: 'WebHook', status: true, triggerCount: 56, showMore: false, config: { path: '/webhook/github/commit', method: 'POST', authType: 'api_key', contentType: 'application/json', apiKey: 'evt_mock_github', queryParams: [], headerParams: [{ name: 'X-GitHub-Event', required: true }], bodyParams: [{ name: 'commit_id', type: 'string', required: true }, { name: 'author', type: 'string', required: false }, { name: 'message', type: 'string', required: false }] }, rules: ['代码审核'], agents: ['代码提交处理任务'] },
                     { id: 6, name: '订单状态更新 WebHook', type: 'WebHook', status: true, triggerCount: 234, showMore: false, config: { path: '/webhook/orders/update', method: 'POST', authType: 'api_key', contentType: 'application/json', apiKey: 'evt_mock_orders', queryParams: [{ name: 'notify_type', type: 'string', required: false }], headerParams: [], bodyParams: [{ name: 'order_id', type: 'string', required: true }, { name: 'status', type: 'string', required: true }, { name: 'amount', type: 'number', required: false }] }, rules: ['订单处理'], agents: ['订单状态处理任务'] },
-                    { id: 7, name: '设备传感器数据流', type: 'Kafka', status: true, triggerCount: 1523, showMore: false, config: { bootstrapServers: 'kafka-broker-1:9092,kafka-broker-2:9092', topic: 'iot.sensor.data' }, rules: ['数据清洗', '异常检测'], agents: ['传感器数据处理任务'] }
+                    { id: 7, name: '设备传感器数据流', type: 'Kafka', status: true, triggerCount: 1523, showMore: false, config: { bootstrapServers: 'kafka-broker-1:9092,kafka-broker-2:9092', topic: 'iot.sensor.data' }, rules: ['数据清洗', '异常检测'], agents: ['传感器数据处理任务'] },
+                    { id: 8, name: '产线设备温湿度上报', type: 'MQTT', status: true, triggerCount: 892, showMore: false, config: { broker: 'mqtt://emqx.factory.local:1883', topic: 'factory/line1/+/telemetry' }, rules: [], agents: ['传感器异常检测任务'] }
                 ]);
                 const eventLogsData = {
                     1: [{ id: 'EVT-20231026-001', timestamp: '2023-10-26 14:32:05', data: { device_id: 'V-Transf-A01', voltage: 245.5, location: 'Zone-A', status: 'alert' } }, { id: 'EVT-20231026-002', timestamp: '2023-10-26 14:28:12', data: { device_id: 'V-Transf-A01', voltage: 242.3, location: 'Zone-A', status: 'normal' } }],
@@ -870,7 +1075,11 @@
                     3: [{ id: 'EVT-20231026-001', timestamp: '2023-10-26 08:30:00', data: { check_id: 'CHECK-20231026', operator: 'Admin_Sys', devices: ['Machine-A01', 'Machine-A02'] } }],
                     5: [{ id: 'EVT-20231028-001', timestamp: '2023-10-28 16:45:23', data: { commit_id: 'abc123456789', author: 'developer', message: 'feat: 添加新功能', repository: 'https://github.com/example/repo' } }],
                     6: [{ id: 'EVT-20231028-001', timestamp: '2023-10-28 14:30:00', data: { order_id: 'ORD-2023-1028-001', status: 'paid', amount: 1299.99, customer: '张三' } }],
-                    7: [{ id: 'EVT-20231029-001', timestamp: '2023-10-29 09:15:32', data: { sensor_id: 'TEMP-001', device_name: '温度传感器A1', temperature: 36.8, humidity: 65.2 } }]
+                    7: [{ id: 'EVT-20231029-001', timestamp: '2023-10-29 09:15:32', data: { sensor_id: 'TEMP-001', device_name: '温度传感器A1', temperature: 36.8, humidity: 65.2 } }],
+                    8: [
+                        { id: 'EVT-20231030-001', timestamp: '2023-10-30 10:22:15', data: { _mqtt_topic: 'factory/line1/device-A01/telemetry', device_id: 'device-A01', temperature: 36.8, humidity: 65.2 } },
+                        { id: 'EVT-20231030-002', timestamp: '2023-10-30 10:18:42', data: { _mqtt_topic: 'factory/line1/device-B02/telemetry', device_id: 'device-B02', temperature: 42.1, humidity: 58.0 } }
+                    ]
                 };
                 const currentEventLogs = ref([]);
 
@@ -999,6 +1208,101 @@
                     return true;
                 };
 
+                const generateMqttClientId = () => {
+                    const id = isEditMode.value && editingRuleId.value ? editingRuleId.value : getNextEventId();
+                    return `evt-platform-${id}-${Math.random().toString(36).slice(2, 6)}`;
+                };
+                const ensureMqttClientId = () => {
+                    if (!form.value.mqttClientId) {
+                        form.value.mqttClientId = generateMqttClientId();
+                    }
+                };
+                const regenerateMqttClientId = () => {
+                    form.value.mqttClientId = generateMqttClientId();
+                    ElementPlus.ElMessage.success('Client ID 已重新生成');
+                };
+                const normalizeEventFields = (list) => list
+                    .filter(f => f.name.trim())
+                    .map(f => ({ name: f.name.trim(), type: f.type || 'String (文本)' }));
+                const validateEventFields = (list) => {
+                    if (list.some(f => !f.name.trim())) {
+                        ElementPlus.ElMessage.warning('事件数据字段：请填写所有字段名，或删除空行');
+                        return false;
+                    }
+                    const names = list.map(f => f.name.trim()).filter(Boolean);
+                    if (names.length !== new Set(names).size) {
+                        ElementPlus.ElMessage.warning('事件数据字段：字段名不能重复');
+                        return false;
+                    }
+                    return true;
+                };
+                const fillMqttFormFromConfig = (config) => {
+                    form.value.mqttBroker = config.broker || '';
+                    form.value.mqttTopic = config.topic || '';
+                    form.value.mqttClientId = config.clientId || '';
+                    form.value.mqttQos = config.qos != null ? config.qos : 1;
+                    form.value.mqttCleanSession = config.cleanSession != null ? config.cleanSession : false;
+                    form.value.mqttKeepAlive = config.keepAlive != null ? config.keepAlive : 60;
+                    form.value.mqttAuthMethod = config.authMethod || 'none';
+                    form.value.mqttUsername = config.username || '';
+                    form.value.mqttPassword = config.password || '';
+                    form.value.pulsarFields = (config.fields || []).map(f => ({
+                        name: f.name, type: f.type || 'String (文本)'
+                    }));
+                    if (!form.value.mqttClientId) ensureMqttClientId();
+                };
+                const buildMqttConfig = () => {
+                    const config = {
+                        broker: form.value.mqttBroker.trim(),
+                        topic: form.value.mqttTopic.trim(),
+                        clientId: form.value.mqttClientId.trim(),
+                        qos: form.value.mqttQos,
+                        cleanSession: form.value.mqttCleanSession,
+                        keepAlive: form.value.mqttKeepAlive,
+                        authMethod: form.value.mqttAuthMethod,
+                        fields: normalizeEventFields(form.value.pulsarFields)
+                    };
+                    if (form.value.mqttAuthMethod === 'username') {
+                        config.username = form.value.mqttUsername.trim();
+                        config.password = form.value.mqttPassword;
+                    }
+                    return config;
+                };
+                const validateMqttForm = () => {
+                    if (!form.value.mqttBroker.trim()) {
+                        ElementPlus.ElMessage.warning('请输入 Broker 地址');
+                        return false;
+                    }
+                    if (!/^mqtts?:\/\/.+/i.test(form.value.mqttBroker.trim())) {
+                        ElementPlus.ElMessage.warning('Broker 地址格式不正确，需以 mqtt:// 或 mqtts:// 开头');
+                        return false;
+                    }
+                    if (!form.value.mqttTopic.trim()) {
+                        ElementPlus.ElMessage.warning('请输入订阅主题');
+                        return false;
+                    }
+                    if (!form.value.mqttClientId.trim()) {
+                        ElementPlus.ElMessage.warning('请输入 Client ID');
+                        return false;
+                    }
+                    if (![0, 1, 2].includes(form.value.mqttQos)) {
+                        ElementPlus.ElMessage.warning('QoS 必须为 0、1 或 2');
+                        return false;
+                    }
+                    if (form.value.mqttAuthMethod === 'username') {
+                        if (!form.value.mqttUsername.trim()) {
+                            ElementPlus.ElMessage.warning('请输入 MQTT 用户名');
+                            return false;
+                        }
+                        if (!form.value.mqttPassword) {
+                            ElementPlus.ElMessage.warning('请输入 MQTT 密码');
+                            return false;
+                        }
+                    }
+                    if (!validateEventFields(form.value.pulsarFields)) return false;
+                    return true;
+                };
+
                 const clearFilter = (type) => {
                     if (type === 'sourceType') filterSourceType.value = '';
                     if (type === 'status') filterStatus.value = '';
@@ -1017,6 +1321,8 @@
                     form.value.sourceType = rule.type;
                     if (rule.type === 'WebHook') {
                         fillWebhookFormFromConfig(rule.config);
+                    } else if (rule.type === 'MQTT') {
+                        fillMqttFormFromConfig(rule.config);
                     }
                     isDrawerOpen.value = true;
                 };
@@ -1067,10 +1373,20 @@
                         webhookPath: '',
                         webhookMethod: 'POST',
                         webhookContentType: 'application/json',
-                        webhookApiKey: ''
+                        webhookApiKey: '',
+                        mqttBroker: '',
+                        mqttTopic: '',
+                        mqttClientId: '',
+                        mqttQos: 1,
+                        mqttCleanSession: false,
+                        mqttKeepAlive: 60,
+                        mqttAuthMethod: 'none',
+                        mqttUsername: '',
+                        mqttPassword: ''
                     };
                     showPulsarToken.value = false;
                     showKafkaPassword.value = false;
+                    showMqttPassword.value = false;
                 };
                 const toggleDay = (day) => {
                     const index = form.value.timerWeekDays.indexOf(day);
@@ -1114,6 +1430,9 @@
                     if (form.value.sourceType === 'WebHook' && !validateWebhookForm()) {
                         return;
                     }
+                    if (form.value.sourceType === 'MQTT' && !validateMqttForm()) {
+                        return;
+                    }
                     let config = {};
                     if (form.value.sourceType === 'Timer') {
                         let desc = '';
@@ -1135,6 +1454,8 @@
                         config = { ip: form.value.serviceUrl, topic: form.value.topic };
                     } else if (form.value.sourceType === 'Kafka') {
                         config = { bootstrapServers: form.value.kafkaBootstrapServers, topic: form.value.kafkaTopic };
+                    } else if (form.value.sourceType === 'MQTT') {
+                        config = buildMqttConfig();
                     } else if (form.value.sourceType === 'WebHook') {
                         config = buildWebhookConfig(form.value.webhookPath);
                     }
@@ -1174,6 +1495,10 @@
                     form.value.bodyParams = [];
                     if (form.value.sourceType === 'WebHook') {
                         ensureWebhookPath();
+                    } else if (form.value.sourceType === 'MQTT') {
+                        ensureMqttClientId();
+                        form.value.webhookPath = '';
+                        form.value.webhookApiKey = '';
                     } else {
                         form.value.webhookPath = '';
                         form.value.webhookApiKey = '';
@@ -1194,10 +1519,10 @@
                     isDrawerOpen, isEditMode, isLogDrawerOpen, isDeleteModalOpen,
                     selectedEventLog, selectedEventToDelete,
                     searchKeyword, filterSourceType, filterStatus, filterAgent,
-                    showPulsarToken, showKafkaPassword,
+                    showPulsarToken, showKafkaPassword, showMqttPassword,
                     form, ruleList, currentEventLogs, filteredRuleList, currentPage, pageSize, pagedRuleList,
                     getWebhookFullUrl, getAuthTypeLabel, copyText, copyWebhookUrl,
-                    resetWebhookApiKey,
+                    resetWebhookApiKey, regenerateMqttClientId,
                     openDrawer, openEditDrawer, openLogDrawer, openDeleteModal, confirmDelete,
                     resetForm, toggleDay, toggleMonthDay, addField, removeField,
                     addQueryParam, removeQueryParam, addHeaderParam, removeHeaderParam, addBodyParam, removeBodyParam,
@@ -1207,6 +1532,8 @@
         });
 
         for (const [key, component] of Object.entries(ElementPlusIconsVue)) { app.component(key, component); }
+        app.component('FieldHelp', FieldHelp);
+        app.component('FieldLabel', FieldLabel);
         app.use(ElementPlus, { locale: ElementPlusLocaleZhCn });
         app.mount('#app');
     </script>
